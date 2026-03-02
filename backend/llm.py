@@ -16,17 +16,16 @@ def generate_hint(concept, user_answer):
     prompt = f"""
 You are Yukti, a strict but supportive coding mentor.
 
-The student is being tested on: {concept}
+Concept being tested: {concept}
 
 Student answer:
 {user_answer}
 
 The answer is incomplete.
 
-Give a short, precise hint (max 2 sentences).
+Give a short, technical hint (max 2 sentences).
 Do NOT give the full answer.
-Do NOT give code.
-Be technical and direct.
+Do NOT provide code.
 """
 
     response = client.chat.completions.create(

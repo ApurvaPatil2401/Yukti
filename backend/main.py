@@ -1,5 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+import random
+
 from problems import problems
 from validators import *
 from llm import generate_hint
@@ -10,7 +12,7 @@ validation_tracker = {}
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=["*"],  # change later for production
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -30,8 +32,11 @@ def get_problems():
 @app.post("/ask")
 def ask_concept(problem_key: str):
     validation_tracker[problem_key] = 0
-    first_question = problems[problem_key]["steps"][0]["question"]
-    return {"question": first_question}
+
+    first_step = problems[problem_key]["steps"][0]
+    question = random.choice(first_step["questions"])
+
+    return {"question": question}
 
 
 @app.post("/evaluate")
@@ -42,7 +47,6 @@ def evaluate(problem_key: str, user_answer: str):
     step = problem["steps"][step_index]
     validator_name = step["validator"]
 
-    # Dynamically call validator function
     validator_function = globals()[validator_name]
     understood = validator_function(user_answer)
 
@@ -57,16 +61,21 @@ def evaluate(problem_key: str, user_answer: str):
                 "solution": problem["solution"]
             }
 
-        next_question = problem["steps"][step_index]["question"]
+        next_step = problem["steps"][step_index]
+        question = random.choice(next_step["questions"])
 
         return {
             "status": "continue",
-            "question": next_question
+            "question": question
         }
 
     else:
-        hint = generate_hint(problem_key, user_answer)
+        hint = generate_hint(step["concept"], user_answer)
         return {
             "status": "locked",
             "hint": hint
         }
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("main:app", host="0.0.0.0", port=8000)

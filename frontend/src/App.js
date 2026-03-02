@@ -8,6 +8,7 @@ function App() {
   const [answer, setAnswer] = useState("");
   const [solution, setSolution] = useState("");
   const [status, setStatus] = useState("locked");
+  const [step, setStep] = useState(0);
 
   const chatEndRef = useRef(null);
 
@@ -26,6 +27,7 @@ function App() {
     setSolution("");
     setStatus("locked");
     setMessages([]);
+    setStep(1);
 
     const res = await axios.post(
       "http://localhost:8000/ask",
@@ -34,10 +36,7 @@ function App() {
     );
 
     setMessages([
-      {
-        role: "mentor",
-        content: res.data.question
-      }
+      { role: "mentor", content: res.data.question }
     ]);
   };
 
@@ -65,21 +64,24 @@ function App() {
     if (res.data.status === "unlocked") {
       setSolution(res.data.solution);
       setStatus("unlocked");
+      setStep(2);
 
       setMessages([
         ...updatedMessages,
         {
           role: "mentor",
-          content: "Excellent. You’ve demonstrated strong conceptual understanding. Unlocking solution."
+          content: "Excellent. Concept validated. Unlocking solution."
         }
       ]);
     }
     else if (res.data.status === "continue") {
+      setStep(2);
+
       setMessages([
         ...updatedMessages,
         {
           role: "mentor",
-          content: "Good. Let’s go one level deeper.\n\n" + res.data.question
+          content: res.data.question
         }
       ]);
     }
@@ -97,117 +99,209 @@ function App() {
   };
 
   return (
-    <div style={{
-      minHeight: "100vh",
-      backgroundColor: "#0f172a",
-      color: "#e2e8f0",
-      padding: "30px",
-      fontFamily: "Segoe UI"
-    }}>
-      <h1 style={{ color: "#38bdf8" }}>🧠 Yukti – The Guarded IDE</h1>
+    <div style={styles.page}>
+      <div style={styles.container}>
 
-      <div style={{ marginBottom: "20px" }}>
-        <select
-          value={selected}
-          onChange={(e) => setSelected(e.target.value)}
-          style={{ padding: "8px", background: "#1e293b", color: "white" }}
-        >
-          <option value="">-- Choose Problem --</option>
-          {Object.keys(problems).map((key) => (
-            <option key={key} value={key}>{key}</option>
-          ))}
-        </select>
+        <h1 style={styles.title}> Yukti – The Guarded IDE </h1>
 
-        <button
-          onClick={askQuestion}
-          style={{
-            marginLeft: "10px",
-            padding: "8px 12px",
-            background: "#38bdf8",
-            border: "none",
-            cursor: "pointer"
-          }}
-        >
-          Start
-        </button>
-      </div>
-
-      {/* Chat */}
-      <div style={{
-        background: "#7ba1dd",
-        padding: "20px",
-        height: "350px",
-        overflowY: "auto",
-        borderRadius: "8px",
-        marginBottom: "10px"
-      }}>
-        {messages.map((msg, index) => (
-          <div
-            key={index}
-            style={{
-              marginBottom: "10px",
-              display: "flex",
-              justifyContent: msg.role === "user" ? "flex-end" : "flex-start"
-            }}
+        {/* Problem Selector */}
+        <div style={styles.selectorRow}>
+          <select
+            value={selected}
+            onChange={(e) => setSelected(e.target.value)}
+            style={styles.select}
           >
-            <div style={{
-              background: msg.role === "user" ? "#2563eb" : "#334155",
-              padding: "10px 15px",
-              borderRadius: "15px",
-              maxWidth: "70%"
-            }}>
-              {msg.content}
-            </div>
-          </div>
-        ))}
-        <div ref={chatEndRef}></div>
-      </div>
+            <option value="">Select Problem</option>
+            {Object.keys(problems).map((key) => (
+              <option key={key} value={key}>{key}</option>
+            ))}
+          </select>
 
-      {/* Input */}
-      {messages.length > 0 && status !== "unlocked" && (
-        <div>
-          <input
-            type="text"
-            value={answer}
-            onChange={(e) => setAnswer(e.target.value)}
-            placeholder="Explain your understanding..."
-            style={{
-              width: "80%",
-              padding: "10px",
-              background: "#1e293b",
-              color: "white",
-              border: "1px solid #334155"
-            }}
-          />
           <button
-            onClick={submitAnswer}
-            style={{
-              marginLeft: "10px",
-              padding: "10px 15px",
-              background: "#38bdf8",
-              border: "none",
-              cursor: "pointer"
-            }}
+            onClick={askQuestion}
+            style={styles.startButton}
           >
-            Submit
+            Start
           </button>
         </div>
-      )}
 
-      {/* Solution */}
-      {status === "unlocked" && (
-        <div style={{
-          marginTop: "20px",
-          background: "#064e3b",
-          padding: "20px",
-          borderRadius: "8px"
-        }}>
-          <h3>Unlocked Solution</h3>
-          <pre>{solution}</pre>
+        {/* Step Indicator */}
+        {step > 0 && (
+          <div style={styles.stepIndicator}>
+            <div style={{
+              ...styles.stepCircle,
+              background: step >= 1 ? "#38bdf8" : "#1e293b"
+            }}>1</div>
+
+            <div style={styles.stepLine}></div>
+
+            <div style={{
+              ...styles.stepCircle,
+              background: step >= 2 ? "#38bdf8" : "#1e293b"
+            }}>2</div>
+          </div>
+        )}
+
+        {/* Chat Card */}
+        <div style={styles.chatCard}>
+          {messages.map((msg, index) => (
+            <div
+              key={index}
+              style={{
+                display: "flex",
+                justifyContent:
+                  msg.role === "user" ? "flex-end" : "flex-start",
+                marginBottom: "12px"
+              }}
+            >
+              <div style={{
+                ...styles.messageBubble,
+                background:
+                  msg.role === "user" ? "#2563eb" : "#1e293b"
+              }}>
+                {msg.content}
+              </div>
+            </div>
+          ))}
+          <div ref={chatEndRef}></div>
         </div>
-      )}
+
+        {/* Input */}
+        {messages.length > 0 && status !== "unlocked" && (
+          <div style={styles.inputRow}>
+            <input
+              type="text"
+              value={answer}
+              onChange={(e) => setAnswer(e.target.value)}
+              placeholder="Explain your reasoning..."
+              style={styles.input}
+            />
+            <button
+              onClick={submitAnswer}
+              style={styles.submitButton}
+            >
+              Submit
+            </button>
+          </div>
+        )}
+
+        {/* Solution */}
+        {status === "unlocked" && (
+          <div style={styles.solutionCard}>
+            <h3>Unlocked Solution</h3>
+            <pre style={{ margin: 0 }}>{solution}</pre>
+          </div>
+        )}
+
+      </div>
     </div>
   );
 }
+
+const styles = {
+  page: {
+    minHeight: "100vh",
+    background: "linear-gradient(135deg, #2b274e, #44486d)",
+    color: "#e2e8f0",
+    display: "flex",
+    justifyContent: "center",
+    padding: "40px 20px",
+    fontFamily: "Inter, sans-serif",
+    transition: "all 0.3s ease"
+  },
+  container: {
+    width: "100%",
+    maxWidth: "800px"
+  },
+  title: {
+    color: "#39c4c9",
+    marginBottom: "30px",
+    textAlign: "center"
+  },
+  selectorRow: {
+    display: "flex",
+    gap: "10px",
+    marginBottom: "20px"
+  },
+  select: {
+    flex: 1,
+    padding: "10px",
+    background: "#1e293b",
+    color: "white",
+    border: "1px solid #334155",
+    borderRadius: "6px"
+  },
+  startButton: {
+    padding: "10px 16px",
+    background: "#38bdf8",
+    border: "none",
+    borderRadius: "6px",
+    cursor: "pointer",
+    fontWeight: "bold"
+  },
+  stepIndicator: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: "20px"
+  },
+  stepCircle: {
+    width: "32px",
+    height: "32px",
+    borderRadius: "50%",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontWeight: "bold",
+    transition: "all 0.3s ease"
+  },
+  stepLine: {
+    width: "50px",
+    height: "2px",
+    background: "#2b2c66"
+  },
+  chatCard: {
+    background: "#191641",
+    padding: "20px",
+    borderRadius: "10px",
+    minHeight: "300px",
+    boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
+    marginBottom: "15px",
+    transition: "all 0.3s ease"
+  },
+  messageBubble: {
+    padding: "10px 14px",
+    borderRadius: "15px",
+    maxWidth: "75%",
+    transition: "all 0.2s ease"
+  },
+  inputRow: {
+    display: "flex",
+    gap: "10px"
+  },
+  input: {
+    flex: 1,
+    padding: "10px",
+    background: "#1c1c36",
+    border: "1px solid #334155",
+    borderRadius: "6px",
+    color: "white"
+  },
+  submitButton: {
+    padding: "10px 16px",
+    background: "#1bbd1b",
+    border: "none",
+    borderRadius: "6px",
+    cursor: "pointer",
+    fontWeight: "bold"
+  },
+  solutionCard: {
+    marginTop: "20px",
+    background: "#064e3b",
+    padding: "20px",
+    borderRadius: "10px",
+    boxShadow: "0 6px 20px rgba(0,0,0,0.3)"
+  }
+};
 
 export default App;
