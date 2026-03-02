@@ -13,7 +13,7 @@ function App() {
   const chatEndRef = useRef(null);
 
   useEffect(() => {
-    axios.get("https://yukti-backend.onrender.com")
+    axios.get("https://yukti-backend.onrender.com/problems")
       .then(res => setProblems(res.data));
   }, []);
 
@@ -30,7 +30,7 @@ function App() {
     setStep(1);
 
     const res = await axios.post(
-      "http://localhost:8000/ask",
+      "https://yukti-backend.onrender.com/ask",
       null,
       { params: { problem_key: selected } }
     );
@@ -51,7 +51,7 @@ function App() {
     setMessages(updatedMessages);
 
     const res = await axios.post(
-      "http://localhost:8000/evaluate",
+      "https://yukti-backend.onrender.com/evaluate",
       null,
       {
         params: {
