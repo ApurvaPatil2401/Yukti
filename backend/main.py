@@ -1,10 +1,12 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from problems import problems
-from llm import generate_concept_question, evaluate_answer, generate_hint
+from validators import *
+from llm import generate_hint
+
+app = FastAPI()
 
 validation_tracker = {}
-app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
@@ -13,9 +15,12 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
 @app.get("/")
 def root():
     return {"message": "Yukti Backend Running 🚀"}
+
 
 @app.get("/problems")
 def get_problems():
@@ -24,46 +29,43 @@ def get_problems():
 
 @app.post("/ask")
 def ask_concept(problem_key: str):
-    problem = problems[problem_key]
-    question = generate_concept_question(
-        problem["description"],
-        problem["concept"]
-    )
-    return {"question": question}
+    validation_tracker[problem_key] = 0
+    first_question = problems[problem_key]["steps"][0]["question"]
+    return {"question": first_question}
 
 
 @app.post("/evaluate")
 def evaluate(problem_key: str, user_answer: str):
     problem = problems[problem_key]
+    step_index = validation_tracker.get(problem_key, 0)
 
-    understood = evaluate_answer(problem["concept"], user_answer)
+    step = problem["steps"][step_index]
+    validator_name = step["validator"]
 
-    if problem_key not in validation_tracker:
-        validation_tracker[problem_key] = 0
+    # Dynamically call validator function
+    validator_function = globals()[validator_name]
+    understood = validator_function(user_answer)
 
     if understood:
-        validation_tracker[problem_key] += 1
+        step_index += 1
+        validation_tracker[problem_key] = step_index
 
-        # Require 2 successful validations
-        if validation_tracker[problem_key] >= 2:
+        if step_index >= len(problem["steps"]):
             validation_tracker[problem_key] = 0
             return {
                 "status": "unlocked",
                 "solution": problem["solution"]
             }
-        else:
-            # Ask second question
-            second_question = generate_concept_question(
-                problem["description"],
-                problem["concept"]
-            )
-            return {
-                "status": "continue",
-                "question": second_question
-            }
+
+        next_question = problem["steps"][step_index]["question"]
+
+        return {
+            "status": "continue",
+            "question": next_question
+        }
 
     else:
-        hint = generate_hint(problem["concept"], user_answer)
+        hint = generate_hint(problem_key, user_answer)
         return {
             "status": "locked",
             "hint": hint
