@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
-
+  
 function App() {
+  const [loading, setLoading] = useState(true);
   const [problems, setProblems] = useState({});
   const [selected, setSelected] = useState("");
   const [messages, setMessages] = useState([]);
@@ -11,6 +12,20 @@ function App() {
   const [step, setStep] = useState(0);
 
   const chatEndRef = useRef(null);
+
+  useEffect(() => {
+    setLoading(true);
+    // REPLACE THIS URL WITH YOUR ACTUAL BACKEND URL
+    fetch('https://yukti-backend-s1c8.onrender.com/health') 
+      .then(res => res.json())
+      .then(data => {
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error(err);
+        // Even if it fails, set loading to false so they can try to use it
+        setLoading(false);
+      });
 
   useEffect(() => {
     axios.get("https://yukti-backend-s1c8.onrender.com/problems")
@@ -303,5 +318,17 @@ const styles = {
     boxShadow: "0 6px 20px rgba(0,0,0,0.3)"
   }
 };
+
+return (
+    <div>
+      {loading ? (
+        <h1>Waking up the AI Mentor... (takes ~30s)</h1>
+      ) : (
+        <h1>Welcome to Yukti!</h1>
+      )}
+      {/* ... rest of your UI ... */}
+    </div>
+  );
+}
 
 export default App;
