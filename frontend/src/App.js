@@ -13,7 +13,7 @@ function App() {
   const chatEndRef = useRef(null);
 
   useEffect(() => {
-    axios.get("http://localhost:8000/problems")
+    axios.get("https://yukti-backend.onrender.com")
       .then(res => setProblems(res.data));
   }, []);
 
