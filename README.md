@@ -67,13 +67,10 @@ This approach helps learners build strong foundations and genuine problem-solvin
 - Supports learning-first AI adoption, especially for learners in Bharat  
 
 
-## Project Status
-- **Current Stage:** Idea & design phase (Hackathon submission)  
-- **Next Steps:**
+## Future Scope
   - Build MVP with Python-only support  
   - Integrate concept evaluation using LLMs  
-  - Add voice & regional language support (future scope)  
-
+  - Add voice & regional language support 
 
 ## Hackathon Submission
 This project is submitted as part of:
